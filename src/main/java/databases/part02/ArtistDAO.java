@@ -1,7 +1,13 @@
+
 package databases.part02;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 /**
  * Data Access Object for the Artist table in the Chinook database.
@@ -35,14 +41,27 @@ public class ArtistDAO {
         List<Artist> artists = new ArrayList<>();
 
         /*
-         * hint: see the class from part 1 for an example of how to connect to the
-         * database and retrieve data from it. This time create new Artist objects
-         * instead of printing the results to the console.
-         *
-         * Note that you must use the `connectionString` field in this class to connect
-         * to the database. You can't "hard code" the connection string, as that would
-         * make tests run against your actual database, which may have unexpected data.
+         * Connect to the database and retrieve all artists.
+         * The artists are ordered by name.
          */
+
+        String sql = "SELECT ArtistId, Name FROM Artist ORDER BY Name";
+
+        try (Connection connection = DriverManager.getConnection(connectionString);
+             PreparedStatement preparedStatement = connection.prepareStatement(sql);
+             ResultSet resultSet = preparedStatement.executeQuery()) {
+
+            while (resultSet.next()) {
+                long id = resultSet.getLong("ArtistId");
+                String name = resultSet.getString("Name");
+
+                Artist artist = new Artist(id, name);
+                artists.add(artist);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
 
         return artists;
     }
@@ -56,21 +75,33 @@ public class ArtistDAO {
      *         that id.
      */
     public Artist getArtistById(long id) {
+
         /*
-         * hint: use similar code to the getArtists() method above, but add a WHERE
-         * clause to the SQL query to only retrieve the artist with the specified id.
-         *
-         * The id can be added to the SQL query using PreparedStatement's setLong()
-         * method. For example: preparedStatement.setLong(1, id);
-         *
-         * You could also just call the getArtists() method above and iterate through
-         * the results until you find the artist with the specified id. This is less
-         * efficient, but it gets the job done and is easy to implement.
-         *
-         * Note that you must use the `connectionString` field in this class to connect
-         * to the database. You can't "hard code" the connection string, as that would
-         * make tests run against your actual database, which may have unexpected data.
+         * Use PreparedStatement to find an artist by id.
+         * Return null if the artist does not exist.
          */
+
+        String sql = "SELECT ArtistId, Name FROM Artist WHERE ArtistId = ?";
+
+        try (Connection connection = DriverManager.getConnection(connectionString);
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            preparedStatement.setLong(1, id);
+
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+
+                if (resultSet.next()) {
+                    long artistId = resultSet.getLong("ArtistId");
+                    String name = resultSet.getString("Name");
+
+                    return new Artist(artistId, name);
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
         return null;
     }
 }
