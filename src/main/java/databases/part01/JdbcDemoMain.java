@@ -6,7 +6,6 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 public class JdbcDemoMain {
 
@@ -16,37 +15,18 @@ public class JdbcDemoMain {
 
         try (Connection connection = DriverManager.getConnection(JDBC_CONNECTION_STRING)) {
 
-            // Create the kaveri table
-            String createTable = "CREATE TABLE IF NOT EXISTS kaveri (id INTEGER PRIMARY KEY, nimi TEXT)";
+            // Get all artists sorted by name
+            String sql = "SELECT ArtistId, Name FROM Artist ORDER BY Name ASC";
 
-            try (Statement statement = connection.createStatement()) {
-                statement.executeUpdate(createTable);
-            }
-
-            // Insert friends into the table
-            String insertSql = "INSERT OR IGNORE INTO kaveri (id, nimi) VALUES (?, ?)";
-
-            try (PreparedStatement preparedStatement = connection.prepareStatement(insertSql)) {
-
-                preparedStatement.setInt(1, 1);
-                preparedStatement.setString(2, "juhanna");
-                preparedStatement.executeUpdate();
-
-              
-            }
-
-            // Get all friends from the database
-            String selectSql = "SELECT id, nimi FROM kaveri ORDER BY id ASC";
-
-            try (PreparedStatement preparedStatement = connection.prepareStatement(selectSql);
+            try (PreparedStatement preparedStatement = connection.prepareStatement(sql);
                  ResultSet resultSet = preparedStatement.executeQuery()) {
 
                 while (resultSet.next()) {
 
-                    int id = resultSet.getInt("id");
-                    String nimi = resultSet.getString("nimi");
+                    int id = resultSet.getInt("ArtistId");
+                    String name = resultSet.getString("Name");
 
-                    System.out.println(id + " " + nimi);
+                    System.out.println(id + " " + name);
                 }
             }
 
