@@ -1,6 +1,13 @@
+
 package databases.part03;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import databases.part02.Artist;
 
@@ -38,7 +45,7 @@ public class AlbumDAO {
         /*
          * hint: use the artist.getId() method to get the artist's id and add it to the
          * SQL query using PreparedStatement's setLong() method. See the previous hint
-         * in ArtistDao.getArtist() for an example.
+         * in ArtistDAO.getArtistById() for an example.
          *
          * Note that you must use the `connectionString` field in this class to connect
          * to the database. You can't "hard code" the connection string, as that would
@@ -46,7 +53,34 @@ public class AlbumDAO {
          *
          * Make sure to sort the albums by AlbumId in ascending order (low to high).
          */
-        return null;
+
+        List<Album> albums = new ArrayList<>();
+
+        String sql = "SELECT AlbumId, Title, ArtistId FROM Album "
+                + "WHERE ArtistId = ? ORDER BY AlbumId ASC";
+
+        try (Connection connection = DriverManager.getConnection(connectionString);
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            preparedStatement.setLong(1, artist.getId());
+
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+
+                while (resultSet.next()) {
+                    long id = resultSet.getLong("AlbumId");
+                    String title = resultSet.getString("Title");
+                    long artistId = resultSet.getLong("ArtistId");
+
+                    Album album = new Album(id, title, artistId);
+                    albums.add(album);
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return albums;
     }
 
     /**
@@ -67,7 +101,22 @@ public class AlbumDAO {
          *
          * Remember to use the `connectionString` instead of hard coding it ;)
          */
-        return false;
+
+        String sql = "INSERT INTO Album (Title, ArtistId) VALUES (?, ?)";
+
+        try (Connection connection = DriverManager.getConnection(connectionString);
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            preparedStatement.setString(1, album.getTitle());
+            preparedStatement.setLong(2, album.getArtistId());
+
+            int rowsAffected = preparedStatement.executeUpdate();
+
+            return rowsAffected > 0;
+
+        } catch (SQLException e) {
+            return false;
+        }
     }
 
     /**
@@ -86,7 +135,23 @@ public class AlbumDAO {
          * Remember to use the `connectionString` instead of hard coding it, otherwise
          * your tests will be deleting albums from your actual database!
          */
-        return false;
+
+        String sql = "UPDATE Album SET Title = ?, ArtistId = ? WHERE AlbumId = ?";
+
+        try (Connection connection = DriverManager.getConnection(connectionString);
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            preparedStatement.setString(1, album.getTitle());
+            preparedStatement.setLong(2, album.getArtistId());
+            preparedStatement.setLong(3, album.getId());
+
+            int rowsAffected = preparedStatement.executeUpdate();
+
+            return rowsAffected > 0;
+
+        } catch (SQLException e) {
+            return false;
+        }
     }
 
     /**
@@ -101,8 +166,22 @@ public class AlbumDAO {
          * See hints for the methods above.
          *
          * Remember to use the `connectionString` instead of hard coding it, otherwise
-         * your tetss will be deleting albums from your actual database!
+         * your tests will be deleting albums from your actual database!
          */
-        return false;
+
+        String sql = "DELETE FROM Album WHERE AlbumId = ?";
+
+        try (Connection connection = DriverManager.getConnection(connectionString);
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            preparedStatement.setLong(1, album.getId());
+
+            int rowsAffected = preparedStatement.executeUpdate();
+
+            return rowsAffected > 0;
+
+        } catch (SQLException e) {
+            return false;
+        }
     }
 }
